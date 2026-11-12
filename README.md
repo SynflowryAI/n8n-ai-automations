@@ -24,7 +24,7 @@ Build an AI-powered customer support workflow using n8n, Gmail, and Google Gemin
 - Build a practical AI customer support workflow
 
 🎥 **[Watch the Full Tutorial](https://youtu.be/LDeKzUZvh3E)**
-
+🎥 Our [YouTube channel](https://www.youtube.com/@SynflowryAI)
 📦 Workflow JSON: Coming soon!
 
 ---
@@ -40,7 +40,8 @@ Turn Telegram into your personal AI assistant using n8n and Google Gemini.
 - Generate AI-powered responses
 - Build your own Telegram chatbot
 
-🎥 Full tutorial: Available on our [YouTube channel](https://www.youtube.com/@SynflowryAI)
+**[Watch the Full Tutorial](https://www.youtube.com/watch?v=D8pOoSyfPaE)**
+🎥 Our [YouTube channel](https://www.youtube.com/@SynflowryAI)
 
 📦 Workflow JSON: Coming soon!
 
@@ -57,9 +58,10 @@ Analyze customer feedback automatically using n8n and Google Gemini.
 - Handle different customer feedback scenarios
 - Send automated email alerts for urgent feedback
 
-🎥 Full tutorial: Available on our [YouTube channel](https://www.youtube.com/@SynflowryAI)
+**[Watch the Full Tutorial](https://www.youtube.com/watch?v=9fAJXnouKDI&)**
+🎥 Our [YouTube channel](https://www.youtube.com/@SynflowryAI)
 
-📦 Workflow JSON: Coming soon!
+📦 Workflow JSON: 📦 **[Download Free n8n Workflow JSON](https://github.com/SynflowryAI/n8n-ai-automations/blob/main/customer-feedback-analyzer.json)**
 
 ---
 
