@@ -1,0 +1,305 @@
+{
+  "name": "AI Customer Support Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "filters": {
+          "q": "in:inbox subject:\"[AI-TEST]\" -label:AI-Processed"
+        }
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -752,
+        -176
+      ],
+      "id": "de69d666-a168-4501-83ce-6a8e97975e62",
+      "name": "Gmail Trigger"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "messageId": "={{ $json.id }}",
+        "simple": false,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        -560,
+        -96
+      ],
+      "id": "640440a0-b6bc-45d3-a362-95e5e05cddf9",
+      "name": "Get a message"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-3.5-flash-lite",
+          "mode": "list",
+          "cachedResultName": "Gemini 3.5 Flash Lite"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Analyze the following customer email and prepare a response.\n\nSubject: {{ $('Get a message').item.json.subject }}\n\nCustomer message:\n{{ $('Get a message').item.json.text }}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {
+          "systemMessage": "You are a professional AI customer support assistant for Demo Store, a fictional online electronics retailer.  Your job is to analyze customer emails and prepare helpful, professional draft replies.  Business information: - Products: wireless headphones and phone accessories. - Return window: 14 days. - Business hours: Monday to Friday, 09:00–18:00. - Support language: English.  Rules: 1. Only use the business information provided. 2. Never invent order statuses, delivery dates, prices, or policies. 3. Never promise refunds or discounts. 4. Escalate complaints, sensitive requests, and questions requiring unavailable information. 5. Do not claim that an order has been checked unless actual order data is provided. 6. Always prepare a draft. Never claim to have sent an email. 7. Keep responses polite, concise, and professional.  Return only valid JSON with these fields: {   \"category\": \"order|refund|general|complaint|other\",   \"confidence\": 0.0,   \"needs_human\": true,   \"reason\": \"\",   \"subject\": \"\",   \"reply\": \"\" }"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        -400,
+        -176
+      ],
+      "id": "497deb1c-73de-4e94-89c3-3a38be72978e",
+      "name": "Message a model1"
+    },
+    {
+      "parameters": {
+        "jsCode": "\nreturn $input.all().map((item) => {\n  // Read the AI-generated response\n  const rawText = item.json.content.parts\n    .map(part => part.text || '')\n    .join('\\n')\n    .trim();\n\n  // Remove Markdown code fences if present\n  const cleanedText = rawText\n    .replace(/^```(?:json)?\\s*/i, '')\n    .replace(/\\s*```$/, '')\n    .trim();\n\n  // Convert the response into a JSON object\n  const result = JSON.parse(cleanedText);\n\n  // Validate required fields\n  const requiredFields = [\n    'category',\n    'confidence',\n    'needs_human',\n    'reason',\n    'subject',\n    'reply'\n  ];\n\n  for (const field of requiredFields) {\n    if (!(field in result)) {\n      throw new Error(`Missing required field: ${field}`);\n    }\n  }\n\n  return {\n    json: {\n      category: result.category,\n      confidence: result.confidence,\n      needs_human: result.needs_human,\n      reason: result.reason,\n      subject: result.subject,\n      reply: result.reply\n    }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -32,
+        -176
+      ],
+      "id": "c2f7e3fa-6045-40a3-b146-184d6f8a3003",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 4
+          },
+          "conditions": [
+            {
+              "id": "3243dde3-ac33-47b4-8532-90de306ad944",
+              "leftValue": "={{ $json.needs_human }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [
+        192,
+        -176
+      ],
+      "id": "df4ae204-db4c-41be-ac9e-e68fd45ed12b",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "={{ $json.subject }}",
+        "message": "={{ $json.reply }}",
+        "options": {
+          "threadId": "={{ $('Get a message').item.json.threadId }}",
+          "sendTo": "={{ $('Get a message').first().json.from.value[0].address }}"
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        416,
+        -192
+      ],
+      "id": "c7d7b850-eb96-4667-8ca5-5d4a4b0cf8f5",
+      "name": "Create a draft for human need true"
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "={{ $json.subject }}",
+        "message": "={{ $json.reply }}",
+        "options": {
+          "threadId": "={{ $('Get a message').first().json.threadId }}",
+          "sendTo": "={{ $('Get a message').first().json.from.value[0].address }}"
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        384,
+        0
+      ],
+      "id": "a45e21e4-dbd4-465a-88a0-d11cb80e78d7",
+      "name": "Create a draft for human need false"
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $('Get a message').first().json.id }}",
+        "labelIds": []
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        640,
+        -192
+      ],
+      "id": "9031bb17-54d3-41ff-971c-4e80dd8072bc",
+      "name": "label as AI processed"
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $('Get a message').first().json.id }}",
+        "labelIds": []
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        608,
+        0
+      ],
+      "id": "8baf4d78-1061-4017-8332-8985f2750e67",
+      "name": "label as AI processed1"
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $('Get a message').first().json.id }}",
+        "labelIds": []
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        864,
+        -192
+      ],
+      "id": "3419b9e0-ffe8-4def-9b30-fb7c325b92a4",
+      "name": "label as needs review"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a message": {
+      "main": [
+        [
+          {
+            "node": "Message a model1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Create a draft for human need true",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create a draft for human need false",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a draft for human need true": {
+      "main": [
+        [
+          {
+            "node": "label as AI processed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a draft for human need false": {
+      "main": [
+        [
+          {
+            "node": "label as AI processed1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "label as AI processed": {
+      "main": [
+        [
+          {
+            "node": "label as needs review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  }
+}
