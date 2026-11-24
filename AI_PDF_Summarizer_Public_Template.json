@@ -1,0 +1,157 @@
+{
+  "name": "AI PDF Summarizer",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "AI PDF Summarizer",
+        "formDescription": "Upload a PDF to generate an AI summary, key points, and action items.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Upload PDF",
+              "fieldType": "file",
+              "acceptFileTypes": ".pdf",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        -832,
+        -1056
+      ],
+      "id": "9ed4ef3e-533f-456b-9df5-4554c152ba06",
+      "name": "On form submission",
+      "webhookId": "35b32dda-fefb-4d8e-b704-ddd49a9cb8c9"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "Upload_PDF",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.2,
+      "position": [
+        -624,
+        -832
+      ],
+      "id": "058bac11-50ff-41bb-9b59-80d74cc927de",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-3.5-flash-lite",
+          "mode": "list",
+          "cachedResultName": "Gemini 3.5 Flash Lite"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "={{ `You are an expert AI document analyst.\n\nAnalyze the PDF document below and return accurate, structured information.\n\nAlways respond in English.\n\nReturn ONLY valid JSON with this structure:\n{\n  \"summary\": \"A concise summary in 3-5 sentences.\",\n  \"key_points\": [\n    \"Key point 1\",\n    \"Key point 2\",\n    \"Key point 3\",\n    \"Key point 4\",\n    \"Key point 5\"\n  ],\n  \"action_items\": [\n    \"Action item 1\"\n  ]\n}\n\nRULES:\n\nSUMMARY:\n- Summarize the document in 3-5 sentences.\n- Focus on its purpose, main findings, and conclusions.\n\nKEY POINTS:\n- Extract exactly 5 important facts or findings.\n- Do not invent information.\n\nACTION ITEMS:\n- Carefully examine the entire document for tasks, responsibilities, deadlines, next steps, and recommendations requiring action.\n- Extract ALL explicitly stated tasks and required actions.\n- Include the responsible person and deadline when available.\n- Write each action item as a clear, actionable sentence.\n- Do not confuse general observations with actionable tasks.\n- If the document contains an implementation plan, checklist, assigned tasks, or project milestones, extract the corresponding actions.\n- Return an empty array ONLY if the document contains no explicit tasks, required actions, or actionable recommendations.\n- Never invent tasks, owners, or deadlines.\n\nOUTPUT:\n- Return valid JSON only.\n- Do not include Markdown code fences.\n- Do not include explanations outside the JSON.\n\nDOCUMENT:\n${$json.text}` }}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        -352,
+        -960
+      ],
+      "id": "537f6653-2c56-40fd-84df-a0011d31100c",
+      "name": "Message a model"
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst items = $input.all();\n\nreturn items.map((item) => {\n  const raw = (item.json.content?.parts ?? [])\n    .filter(part => !part.thought && typeof part.text === 'string')\n    .map(part => part.text)\n    .join('');\n\n  if (!raw.trim()) {\n    throw new Error('Gemini returned an empty response.');\n  }\n\n  // Remove optional Markdown code fences.\n  const cleaned = raw\n    .trim()\n    .replace(/^```(?:json)?\\s*/i, '')\n    .replace(/\\s*```$/i, '');\n\n  let result;\n\n  try {\n    result = JSON.parse(cleaned);\n  } catch (error) {\n    throw new Error(\n      'Invalid JSON returned by Gemini: ' + error.message\n    );\n  }\n\n  if (\n    typeof result.summary !== 'string' ||\n    !Array.isArray(result.key_points) ||\n    result.key_points.length !== 5 ||\n    !result.key_points.every(p => typeof p === 'string') ||\n    !Array.isArray(result.action_items) ||\n    !result.action_items.every(a => typeof a === 'string')\n  ) {\n    throw new Error(\n      'Gemini response does not match the expected structure.'\n    );\n  }\n\n  return {\n    json: {\n      summary: result.summary,\n      key_points: result.key_points,\n      action_items: result.action_items\n    }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        32,
+        -832
+      ],
+      "id": "bd19c013-b1f9-4137-8860-ada3bf53b475",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "completionTitle": "Your AI PDF Summary is Ready!",
+        "completionMessage": "={{ \n\"SUMMARY\\n\\n\" +\n$json.summary +\n\"\\n\\nKEY POINTS\\n\\n\" +\n$json.key_points.map((point, index) => \n  (index + 1) + \". \" + point\n).join(\"\\n\\n\") +\n\"\\n\\nACTION ITEMS\\n\\n\" +\n(\n  $json.action_items.length > 0\n    ? $json.action_items.map((item, index) =>\n        (index + 1) + \". \" + item\n      ).join(\"\\n\\n\")\n    : \"No action items found in this document.\"\n)\n}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        224,
+        -1040
+      ],
+      "id": "d96f3278-6be8-4bef-b80b-88fa2fc8925a",
+      "name": "Form",
+      "webhookId": "97a775cf-7562-4e5f-a569-f72b036b249b"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Form",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "nodeGroups": [],
+  "tags": []
+}
