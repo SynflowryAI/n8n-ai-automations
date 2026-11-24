@@ -64,6 +64,46 @@ Analyze customer feedback automatically using n8n and Google Gemini.
 
 📦 Workflow JSON: 📦 **[Download Free n8n Workflow JSON](https://github.com/SynflowryAI/n8n-ai-automations/blob/main/customer-feedback-analyzer.json)**
 
+
+### 📋 4. Google Sheets to Gmail AI Automation
+
+Automatically turn Google Sheets data into AI-powered email drafts using n8n, Google Gemini, and Gmail.
+
+**What you'll learn:**
+- Automatically read data from Google Sheets
+- Analyze customer requests using Google Gemini
+- Generate personalized email responses with AI
+- Automatically create Gmail drafts
+- Update Google Sheets after processing each request
+- Build a scheduled AI automation workflow
+
+🎥 **[Watch the Full Tutorial](https://www.youtube.com/watch?v=4GuCstUeBQw)**
+
+🎥 on our [YouTube channel](https://www.youtube.com/@SynflowryAI)
+
+📦 **[Download Free n8n Workflow JSON](https://github.com/SynflowryAI/n8n-ai-automations/blob/main/ai-customer-request-automation-public.json)**
+
+---
+
+### 📄 5. AI PDF Summarizer
+
+Build your own AI-powered PDF summarizer in under 5 minutes using n8n and Google Gemini. Turn long PDF documents into structured summaries, key points, and action items.
+
+**What you'll learn:**
+- Create a PDF upload form using n8n
+- Automatically extract text from PDF documents
+- Generate structured PDF summaries with Google Gemini
+- Process and validate AI responses using JavaScript
+- Extract key points and actionable insights
+- Display AI-generated results directly on a form
+
+🎥 **[Watch the Full Tutorial](https://www.youtube.com/watch?v=aoi9EhA0JQo)**
+
+🎥 on our [YouTube channel](https://www.youtube.com/@SynflowryAI)
+
+📦 **[Download Free n8n Workflow JSON](https://github.com/SynflowryAI/n8n-ai-automations/blob/main/AI_PDF_Summarizer_Public_Template.json)**
+
+---
 ---
 
 ## 🛠️ Tools & Technologies
@@ -72,6 +112,8 @@ Analyze customer feedback automatically using n8n and Google Gemini.
 - **Google Gemini** — AI-powered analysis and responses
 - **Gmail** — Email automation
 - **Telegram** — AI chatbot integration
+- **Google Sheets** — Spreadsheet automation and data management
+- **PDF Processing** — Document extraction and AI summarization
 - **JavaScript** — Custom workflow logic
 
 ## 📥 How to Use Our Workflows
