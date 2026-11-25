@@ -104,6 +104,34 @@ Build your own AI-powered PDF summarizer in under 5 minutes using n8n and Google
 📦 **[Download Free n8n Workflow JSON](https://github.com/SynflowryAI/n8n-ai-automations/blob/main/AI_PDF_Summarizer_Public_Template.json)**
 
 ---
+---
+
+### 📰 6. Daily AI News Digest Bot
+
+Automatically collect the latest AI news, generate concise summaries using Google Gemini, and receive a daily news digest directly on Telegram.
+
+**What you'll learn:**
+- Schedule daily automated workflows using n8n
+- Collect AI news from Google News RSS feeds
+- Filter and select the 5 latest articles
+- Generate AI-powered news summaries
+- Parse structured JSON responses
+- Format Telegram messages using HTML
+- Deliver automated daily news digests
+
+🎥 **Full Tutorial — Coming Soon!**
+
+🎥 on our [YouTube channel](https://www.youtube.com/@SynflowryAI)
+
+📦 Workflow JSON: **[Download Free n8n Workflow JSON](https://github.com/SynflowryAI/n8n-ai-automations/blob/main/daily-ai-news-digest-bot-public.json)**
+
+**Setup Requirements:**
+- An n8n instance
+- Your own Google Gemini API credentials
+- A Telegram bot token
+- Your Telegram Chat ID
+
+**Note:** The workflow is configured to run daily at 9 AM. Adjust the schedule and timezone to your preference. AI summaries are based on available RSS feed content, not full article content.
 
 ---
 
