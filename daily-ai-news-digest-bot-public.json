@@ -1,0 +1,200 @@
+{
+  "name": "Daily AI News Digest Bot",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -880,
+        -624
+      ],
+      "id": "fcbd17c7-8057-42f3-b6a9-a76fd53fb111",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "url": "https://news.google.com/rss/search?q=artificial+intelligence&hl=en-US&gl=US&ceid=US:en",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        -720,
+        -368
+      ],
+      "id": "b1bc70c3-6322-42c4-9e21-dcf05396617c",
+      "name": "RSS Read"
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst articles = $input.all();\n\nconst latest = articles\n  .filter(item =>\n    item.json.title &&\n    item.json.link &&\n    item.json.isoDate\n  )\n  .sort((a, b) =>\n    new Date(b.json.isoDate) - new Date(a.json.isoDate)\n  )\n  .slice(0, 5);\n\nreturn latest.map(item => ({\n  json: {\n    title: item.json.title,\n    link: item.json.link,\n    published: item.json.isoDate,\n    description: item.json.contentSnippet || \"\"\n  }\n}));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -512,
+        -368
+      ],
+      "id": "c2e18932-0a31-4926-b652-c3f9c39824eb",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "articles",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        -352,
+        -624
+      ],
+      "id": "f6f2c435-e502-4ee7-ba4e-2af3709ae6cc",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-3.1-flash-lite-preview",
+          "mode": "list",
+          "cachedResultName": "Gemini 3.1 Flash Lite Preview"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=\n{{ `You are a professional AI technology news editor.\n\nCreate a daily AI news digest using the articles provided below.\n\nRULES:\n- Always write in English.\n- Include all 5 articles.\n- Write a concise, informative summary for each article.\n- Use only the information provided.\n- Do not invent facts or details.\n- If an article has insufficient information, clearly state that.\n- Keep the language clear and engaging.\n- Avoid hype and clickbait.\n- Preserve the original article URLs.\n- Return ONLY valid JSON without Markdown code fences.\n\nOUTPUT FORMAT:\n{\n  \"headline\": \"Daily AI News Digest\",\n  \"articles\": [\n    {\n      \"title\": \"Article headline\",\n      \"summary\": \"A concise 1-2 sentence summary.\",\n      \"url\": \"Original article URL\"\n    }\n  ]\n}\n\nARTICLES:\n${JSON.stringify($json.articles, null, 2)}` }}\n"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        -208,
+        -448
+      ],
+      "id": "0fd0551f-f252-4354-9621-6feaf68e77d3",
+      "name": "Message a model"
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst raw = ($input.first().json.content?.parts ?? [])\n  .filter(part => !part.thought && typeof part.text === 'string')\n  .map(part => part.text)\n  .join('');\n\nif (!raw.trim()) {\n  throw new Error(\"Gemini response is empty.\");\n}\n\nconst cleaned = raw.trim()\n  .replace(/^```(?:json)?\\s*/i, \"\")\n  .replace(/\\s*```$/i, \"\");\n\nconst data = JSON.parse(cleaned);\n\nif (!Array.isArray(data.articles) || data.articles.length !== 5) {\n  throw new Error(\"Expected exactly 5 articles.\");\n}\n\n// Escape special characters for Telegram HTML.\nfunction escapeHtml(value) {\n  return String(value ?? \"\")\n    .replace(/&/g, \"&amp;\")\n    .replace(/</g, \"&lt;\")\n    .replace(/>/g, \"&gt;\")\n    .replace(/\"/g, \"&quot;\");\n}\n\nconst date = new Date().toLocaleDateString(\"en-US\", {\n  timeZone: \"Europe/Istanbul\",\n  year: \"numeric\",\n  month: \"long\",\n  day: \"numeric\"\n});\n\nconst lines = [\n  \"📰 <b>DAILY AI NEWS DIGEST</b>\",\n  `📅 ${date}`,\n  \"\",\n  \"━━━━━━━━━━━━\",\n  \"\"\n];\n\ndata.articles.forEach((article, index) => {\n  const title = escapeHtml(article.title);\n  const summary = escapeHtml(article.summary);\n  const url = escapeHtml(article.url);\n\n  lines.push(\n    `<b>${index + 1}. ${title}</b>`,\n    \"\",\n    summary,\n    \"\",\n    `<a href=\"${url}\">🔗 Read Article</a>`,\n    \"\",\n    \"━━━━━━━━━━━━\",\n    \"\"\n  );\n});\n\nlines.push(\"🤖 <i>Powered by Synflowry AI</i>\");\n\nreturn [{\n  json: {\n    message: lines.join(\"\\n\"),\n    article_count: data.articles.length\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        112,
+        -640
+      ],
+      "id": "0f17375e-2f74-451c-9ec2-3f5850b1a005",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "chatId": "REPLACE_WITH_YOUR_CHAT_ID",
+        "text": "={{ $json.message }}",
+        "additionalFields": {
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        304,
+        -432
+      ],
+      "id": "8db45c8d-9323-4e6d-b7ad-f7069ce45160",
+      "name": "Send a text message",
+      "webhookId": "2fade916-c1ff-4acb-bbb4-c72995786ae1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "RSS Read",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RSS Read": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "nodeGroups": [],
+  "tags": []
+}
